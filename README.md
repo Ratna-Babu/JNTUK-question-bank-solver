@@ -3,6 +3,8 @@
 It is a web application that helps users extract and process questions from PDF files and generate detailed answers using Google's Gemini AI.
 This works with JNTU Question Banks
 
+## Format of the Question Bank
+![Image](https://github.com/user-attachments/assets/45412af1-97ec-452c-bb9a-db008a03db40)
 
 ## Features
 
