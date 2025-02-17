@@ -1,6 +1,8 @@
-# QuestionBanker
+# PDF-Answer-Automation-using-AI
 
-QuestionBanker is a web application that helps users extract and process questions from PDF files and generate detailed answers using Google's Gemini AI.
+It is a web application that helps users extract and process questions from PDF files and generate detailed answers using Google's Gemini AI.
+This works with JNTU Question Banks
+
 
 ## Features
 
