@@ -97,114 +97,117 @@ export default function PdfProcessPage() {
     setLoading(true);
     try {
       const doc = new jsPDF();
-  
-      // ---------------------------
-      // 1. Subject Header
-      // ---------------------------
+      let y = 20;
+
+      // Add subject header
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
-      const subjectText = `Subject: ${subject}`;
-      const subjectLines = doc.splitTextToSize(subjectText, 170);
-      let y = 20;
-      subjectLines.forEach((line) => {
-        doc.text(line, 20, y);
-        y += 10;
-      });
-      y += 5;
-  
-      // ---------------------------
-      // 2. Process each Q&A
-      // ---------------------------
+      doc.text(`Subject: ${subject}`, 20, y);
+      y += 15;
+
+      // Process each question and answer
       questions.forEach((question, index) => {
-        // Add a new page if y is near bottom
+        // Add new page if not enough space
         if (y > 270) {
           doc.addPage();
           y = 20;
         }
-  
-        // --- Question ---
+
+        // Add question
         doc.setFont("helvetica", "bold");
-        const qText = `Q${index + 1}: ${question}`;
-        const qLines = doc.splitTextToSize(qText, 170);
-        qLines.forEach((line) => {
-          if (y > 270) {
-            doc.addPage();
-            y = 20;
-          }
+        doc.setFontSize(12);
+        const questionText = `Q${index + 1}: ${question}`;
+        const questionLines = doc.splitTextToSize(questionText, 170);
+        questionLines.forEach(line => {
           doc.text(line, 20, y);
-          y += 8;
+          y += 7;
         });
-        y += 3;
-  
-        // --- Answer ---
-        doc.setFont("helvetica", "normal");
-        let answer = answers[question] || "Generating...";
-        // Split answer into paragraphs by double newline
-        const paragraphs = answer.split("\n\n");
-        paragraphs.forEach((para) => {
-          para = para.trim();
-          if (!para) return;
-  
-          // If the paragraph is a heading (starts and ends with **)
-          if (para.startsWith("**") && para.endsWith("**")) {
-            doc.setFont("helvetica", "bold");
-            const headingText = para.slice(2, -2).trim();
-            const headingLines = doc.splitTextToSize(headingText, 170);
-            headingLines.forEach((hl) => {
-              if (y > 270) {
-                doc.addPage();
-                y = 20;
-              }
-              doc.text(hl, 20, y);
-              y += 8;
-            });
+        y += 5;
+
+        // Process HTML answer
+        const answer = answers[question];
+        if (answer) {
+          // Create temporary div to parse HTML
+          const temp = document.createElement('div');
+          temp.innerHTML = answer;
+
+          // Process introduction
+          const intro = temp.querySelector('.introduction');
+          if (intro) {
             doc.setFont("helvetica", "normal");
-          }
-          // If the paragraph is a bullet list (each line starts with "- ")
-          else if (para.startsWith("- ")) {
-            const bulletLines = para.split("\n");
-            bulletLines.forEach((bullet) => {
-              bullet = bullet.trim();
-              if (bullet.startsWith("- ")) {
-                const bulletContent = bullet.substring(2).trim();
-                const wrappedBullet = doc.splitTextToSize(bulletContent, 160);
-                // Draw bullet symbol at left
-                if (y > 270) {
-                  doc.addPage();
-                  y = 20;
-                }
-                doc.text("•", 20, y);
-                let xOffset = 30;
-                wrappedBullet.forEach((line, i) => {
-                  if (i > 0) {
-                    y += 8;
-                    xOffset = 30;
-                  }
-                  doc.text(line, xOffset, y);
-                });
-                y += 8;
-              }
-            });
-          }
-          // Otherwise, normal paragraph
-          else {
-            const normalLines = doc.splitTextToSize(para, 170);
-            normalLines.forEach((line) => {
+            doc.setFontSize(10);
+            const introText = intro.textContent.trim();
+            const introLines = doc.splitTextToSize(introText, 170);
+            introLines.forEach(line => {
               if (y > 270) {
                 doc.addPage();
                 y = 20;
               }
               doc.text(line, 20, y);
-              y += 8;
+              y += 6;
+            });
+            y += 5;
+          }
+
+          // Process main content
+          const mainContent = temp.querySelector('.main-content');
+          if (mainContent) {
+            // Process headings
+            const headings = mainContent.querySelectorAll('h3');
+            headings.forEach(heading => {
+              if (y > 270) {
+                doc.addPage();
+                y = 20;
+              }
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(11);
+              doc.text(heading.textContent.trim(), 20, y);
+              y += 7;
+
+              // Process lists following each heading
+              const list = heading.nextElementSibling;
+              if (list && list.tagName === 'UL') {
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                const items = list.querySelectorAll('li');
+                items.forEach(item => {
+                  if (y > 270) {
+                    doc.addPage();
+                    y = 20;
+                  }
+                  const itemText = `• ${item.textContent.trim()}`;
+                  const itemLines = doc.splitTextToSize(itemText, 160);
+                  itemLines.forEach(line => {
+                    doc.text(line, 25, y);
+                    y += 6;
+                  });
+                });
+                y += 5;
+              }
             });
           }
-          // Add extra spacing between paragraphs
-          y += 5;
-        });
-        // Extra space after each Q&A pair
-        y += 10;
+
+          // Process summary
+          const summary = temp.querySelector('.summary');
+          if (summary) {
+            if (y > 270) {
+              doc.addPage();
+              y = 20;
+            }
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            const summaryText = summary.textContent.trim();
+            const summaryLines = doc.splitTextToSize(summaryText, 170);
+            summaryLines.forEach(line => {
+              doc.text(line, 20, y);
+              y += 6;
+            });
+          }
+
+          y += 15; // Add space between answers
+        }
       });
-  
+
       doc.save(`${subject.replace(/\s+/g, "_")}_Answers.pdf`);
     } catch (err) {
       setError("Error generating PDF. Please try again.");

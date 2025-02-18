@@ -19,7 +19,7 @@ export async function POST(req) {
         const base64String = buffer.toString("base64");
 
         // Process PDF with Gemini API
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); // ✅ Using Flash 2.0
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); 
 
         const prompt = "Extract the subject name and all questions with their marks from this question bank PDF. Ignore section headings like 'UNIT 1'. Format the response as:\n\nSubject: <subject name>\nQuestions:\n1. <question 1> - <marks>\n2. <question 2> - <marks>\n...";
         const result = await model.generateContent({
@@ -32,7 +32,7 @@ export async function POST(req) {
 
         let extractedQuestions = extractedText
             .split("\n")
-            .filter(line => line.match(/^\d+\./)) // Only take lines that start with numbers
+            .filter(line => line.match(/^\d+\./)) 
             .map(q => q.trim());
 
         return NextResponse.json({

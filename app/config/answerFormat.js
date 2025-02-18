@@ -1,38 +1,42 @@
 const answerFormat = `
-Please generate answers following these strict rules:
+Please generate answers in HTML format following these rules:
 
-### **Structure**:  
-- Begin with a **brief introduction** to the topic in paragraph form.  
-- Provide **detailed explanations** with step-by-step points.  
-- If applicable, include **examples** or real-world applications.  
-- No conclusion heading, end with a paragraph or as you see fit.
+Structure the answer with:
+- A brief introduction
+- Main explanation with key points
+- Examples where applicable
+- A concise summary
 
-### **Formatting**:  
-- Use Markdown-style **bold headers ('**Heading**')** for key sections.  
-- If the answer requires a list, use bullet points ('- Point') or numbering ('1. Step').  
-- Use **line breaks ('\\n\\n')** to separate sections clearly.  
-- If relevant, include **diagrams/images** .  
+Use this HTML template:
+<div class="answer-container">
+    <div class="introduction">
+        <p>[Introduction text here]</p>
+    </div>
+    
+    <div class="main-content">
+        <h3>Key Points</h3>
+        <ul>
+            <li>[Point 1]</li>
+            <li>[Point 2]</li>
+        </ul>
+        
+        <h3>Examples</h3>
+        <ul>
+            <li>[Example 1]</li>
+            <li>[Example 2]</li>
+        </ul>
+    </div>
+    
+    <div class="summary">
+        <p>[Summary text here]</p>
+    </div>
+</div>
 
-### **Subject Relevance**:  
-- Ensure answers are strictly relevant to the subject of the question.  
-- Avoid unnecessary details or off-topic information.
-
-### **Example Output Format**:  
-**Introduction**  
-This is an introduction to the topic.
-
-**Main Explanation**  
-- **Point 1:** Explanation.  
-- **Point 2:** Explanation.  
-
-**Examples**  
-- Example 1  
-- Example 2  
-
- 
-Summary of the topic.
-
-🚀 Stick to this format so the answer is clean and easy to convert into a PDF.
+Important:
+- Use proper HTML tags for structure
+- Include class names for styling
+- Maintain clean, semantic HTML
+- Ensure content is well-formatted for PDF conversion
 `;
 
 export default answerFormat;
