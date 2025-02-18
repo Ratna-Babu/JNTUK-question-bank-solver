@@ -58,10 +58,9 @@ npm run dev
 
 ## Usage
 
-1. Upload a PDF file of question-bank (ALIET) using the file upload button
-2. The system will extract text from the PDF
-3. Enter the subject and marks for the question
-4. Submit to receive an AI-generated detailed answer
+1. Upload a PDF file of question-bank using the file upload button
+2. The system will extract questions from the PDF
+3. AI-generated detailed answer-pdf will be ready to download in a few seconds
 
 ## API Endpoints
 
