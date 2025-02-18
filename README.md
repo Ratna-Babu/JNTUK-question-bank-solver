@@ -33,8 +33,8 @@ This works with any JNTUK Question Bank of any subject.
 
 1. Clone the repository:
 ```
-git clone https://github.com/ratna-babu/PDF-Answer-Automation-using-AI
-cd PDF-Answer-Automation-using-AI
+git clone https://github.com/ratna-babu/JNTUK-question-bank-solver
+cd JNTUK-question-bank-solver
 ```
 
 2. Install dependencies:
