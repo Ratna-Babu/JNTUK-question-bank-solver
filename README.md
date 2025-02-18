@@ -1,23 +1,24 @@
-# PDF-Answer-Automation-using-AI
+# JNTUK Question Bank Solver using AI
 
-It is a web application that helps users extract and process questions from PDF files and generate detailed answers using Google's Gemini AI.
-This works with JNTU Question Banks
+It is a web application that helps users extract and process JNTUK Question Bank Questions (PDF file) and generate detailed answers PDF of any subject.
+This works with any JNTUK Question Bank of any subject.
 
+``` Note: The question bank must follow the below format and must a PDF file ```
 ## Format of the Question Bank
 ![Image](https://github.com/user-attachments/assets/45412af1-97ec-452c-bb9a-db008a03db40)
 
 ## Features
 
-- PDF file upload and text extraction
-- AI-powered answer generation using Google's Gemini Pro model
-- Customizable question parameters (subject, marks)
+- PDF file upload and text extractio
+- AI-powered answer generation 
 - Real-time processing and response
+- Generate Answers PDF for any Question Bank
 
 ## Tech Stack
 
 - **Frontend**: Next.js 13+, React
 - **Backend**: Next.js API Routes
-- **AI Integration**: Google Generative AI (Gemini Pro)
+- **AI Integration**: Google Generative AI (Gemini)
 - **PDF Processing**: pdf-parse
 
 ## Getting Started
@@ -32,8 +33,8 @@ This works with JNTU Question Banks
 
 1. Clone the repository:
 ```
-git clone https://github.com/yourusername/questionbanker.git
-cd questionbanker
+git clone https://github.com/ratna-babu/PDF-Answer-Automation-using-AI
+cd PDF-Answer-Automation-using-AI
 ```
 
 2. Install dependencies:
@@ -42,9 +43,11 @@ npm install
 ```
 
 3. Create a `.env.local` file in the root directory and add your Google AI API key:
+   ```You can get the Gemini API key from "https://aistudio.google.com/" ```
 ```
 NEXT_PUBLIC_GEMINI_API_KEY=your_api_key_here
-``` 
+```
+
 
 4. Start the development server:
 ```
