@@ -3,7 +3,7 @@
 It is a web application that helps users extract and process JNTUK Question Bank Questions (PDF file) and generate detailed answers PDF of any subject.
 This works with any JNTUK Question Bank of any subject.
 
-``` Note: The question bank must follow the below format and must a PDF file ```
+``` Note: The question bank must follow the below format and must be a PDF file ```
 ## Format of the Question Bank
 ![Image](https://github.com/user-attachments/assets/45412af1-97ec-452c-bb9a-db008a03db40)
 
