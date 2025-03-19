@@ -1,8 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import ErrorBoundary from '../components/ErrorBoundary';
+
+// Add this outside the component
+
 
 export default function PdfProcessPage() {
   const [file, setFile] = useState(null);
@@ -12,6 +17,15 @@ export default function PdfProcessPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showDownload, setShowDownload] = useState(false);
+  const [progress, setProgress] = useState([]);
+
+  const addProgress = (message) => {
+    const id = uuidv4(); // Generate a unique ID
+    setProgress(prev => [...prev, { 
+      id, 
+      message 
+    }]);
+  };
 
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
@@ -28,12 +42,17 @@ export default function PdfProcessPage() {
     setQuestions([]);
     setAnswers({});
     setShowDownload(false);
+    setProgress([]);
+    // Do not reset uniqueId here
 
     const formData = new FormData();
     formData.append("file", file);
 
     try {
+      addProgress("📄 Starting PDF processing...");
+      
       // Step 1: Extract questions from the PDF
+      addProgress("🔍 Extracting questions from PDF...");
       const extractResponse = await fetch("/api/extract-questions", {
         method: "POST",
         body: formData,
@@ -46,8 +65,10 @@ export default function PdfProcessPage() {
       const extractData = await extractResponse.json();
       setSubject(extractData.subject || "Unknown Subject");
       setQuestions(extractData.questions || []);
+      addProgress(`✅ Extracted ${extractData.questions.length} questions successfully`);
 
       // Step 2: Generate answers
+      addProgress("🤖 Starting answer generation...");
       const response = await fetch("/api/generate-answers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -61,15 +82,15 @@ export default function PdfProcessPage() {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let partialData = "";
+      let answeredCount = 0;
 
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
 
         partialData += decoder.decode(value, { stream: true });
-
         const lines = partialData.split("\n");
-        partialData = lines.pop(); // Keep the last incomplete line
+        partialData = lines.pop();
 
         for (const line of lines) {
           if (!line.trim()) continue;
@@ -77,137 +98,170 @@ export default function PdfProcessPage() {
           try {
             const { question, answer } = JSON.parse(line);
             setAnswers(prev => ({ ...prev, [question]: answer }));
+            answeredCount++;
+            addProgress(`✍️ Generated answer for question ${answeredCount}/${extractData.questions.length}`);
           } catch (e) {
             console.error("JSON parse error:", e);
           }
         }
       }
 
-      // All answers are generated, show the download button
+      addProgress("✨ All answers generated successfully!");
       setShowDownload(true);
     } catch (err) {
       setError("Error processing file. Please try again.");
+      addProgress("❌ Error occurred during processing");
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
+
   const handleDownloadPDF = async () => {
     setLoading(true);
     try {
       const doc = new jsPDF();
-      let y = 20;
-
-      // Add subject header
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.text(`Subject: ${subject}`, 20, y);
-      y += 15;
-
-      // Process each question and answer
-      questions.forEach((question, index) => {
-        // Add new page if not enough space
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
+      let y = 30;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let currentSection = 0;
+  
+      // Add header and footer functions
+      const addHeader = () => {
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(40);
+        doc.setFontSize(16);
+        doc.text(`Subject: ${subject}`, 15, 15);
+        doc.setDrawColor(200);
+        doc.line(15, 18, pageWidth - 15, 18);
+      };
+  
+      const addFooter = () => {
+        const pageCount = doc.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(10);
+          doc.setTextColor(100);
+          doc.text(
+            `Page ${i} of ${pageCount}`,
+            pageWidth - 25,
+            doc.internal.pageSize.getHeight() - 10
+          );
         }
-
+      };
+  
+      // Initial header
+      addHeader();
+  
+      // Process each question and answer
+      for (const [index, question] of questions.entries()) {
+        if (y > 260) {
+          doc.addPage();
+          y = 30;
+          addHeader();
+        }
+  
         // Add question
         doc.setFont("helvetica", "bold");
+        doc.setTextColor(33, 150, 243); // Blue color
         doc.setFontSize(12);
-        const questionText = `Q${index + 1}: ${question}`;
+        const questionText = `Question ${index + 1}: ${question}`;
         const questionLines = doc.splitTextToSize(questionText, 170);
         questionLines.forEach(line => {
-          doc.text(line, 20, y);
+          doc.text(15, y, line);
           y += 7;
         });
-        y += 5;
-
-        // Process HTML answer
+        doc.setTextColor(0); // Reset color
+        y += 8;
+  
+        // Process answer
         const answer = answers[question];
         if (answer) {
-          // Create temporary div to parse HTML
-          const temp = document.createElement('div');
-          temp.innerHTML = answer;
-
-          // Process introduction
-          const intro = temp.querySelector('.introduction');
-          if (intro) {
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(10);
-            const introText = intro.textContent.trim();
-            const introLines = doc.splitTextToSize(introText, 170);
-            introLines.forEach(line => {
-              if (y > 270) {
-                doc.addPage();
-                y = 20;
-              }
-              doc.text(line, 20, y);
-              y += 6;
-            });
-            y += 5;
-          }
-
-          // Process main content
-          const mainContent = temp.querySelector('.main-content');
-          if (mainContent) {
-            // Process headings
-            const headings = mainContent.querySelectorAll('h3');
-            headings.forEach(heading => {
-              if (y > 270) {
-                doc.addPage();
-                y = 20;
-              }
-              doc.setFont("helvetica", "bold");
-              doc.setFontSize(11);
-              doc.text(heading.textContent.trim(), 20, y);
-              y += 7;
-
-              // Process lists following each heading
-              const list = heading.nextElementSibling;
-              if (list && list.tagName === 'UL') {
-                doc.setFont("helvetica", "normal");
+          const parser = new DOMParser();
+          const docAnswer = parser.parseFromString(answer, "text/html");
+          const body = docAnswer.body;
+  
+          // Process all child elements
+          Array.from(body.children).forEach(element => {
+            if (y > 260) {
+              doc.addPage();
+              y = 30;
+              addHeader();
+            }
+  
+            switch (element.tagName.toLowerCase()) {
+              case "h3":
+                // Section heading
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.text(15, y, element.textContent);
+                y += 10;
+                break;
+  
+              case "h4":
+                // Subheading
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "bolditalic");
+                doc.text(20, y, element.textContent);
+                y += 8;
+                break;
+  
+              case "p":
+                // Paragraph text
                 doc.setFontSize(10);
-                const items = list.querySelectorAll('li');
-                items.forEach(item => {
-                  if (y > 270) {
-                    doc.addPage();
-                    y = 20;
-                  }
-                  const itemText = `• ${item.textContent.trim()}`;
-                  const itemLines = doc.splitTextToSize(itemText, 160);
+                doc.setFont("helvetica", "normal");
+                const lines = doc.splitTextToSize(element.textContent, 170);
+                lines.forEach(line => {
+                  doc.text(15, y, line);
+                  y += 6;
+                });
+                y += 4;
+                break;
+  
+              case "ul":
+              case "ol":
+                // List items
+                const listItems = Array.from(element.children);
+                let counter = 1;
+                listItems.forEach(item => {
+                  const prefix = element.tagName.toLowerCase() === "ol" ? `${counter}. ` : "• ";
+                  const text = prefix + item.textContent;
+                  const itemLines = doc.splitTextToSize(text, 160);
                   itemLines.forEach(line => {
-                    doc.text(line, 25, y);
+                    doc.text(20, y, line);
                     y += 6;
                   });
+                  counter++;
                 });
-                y += 5;
-              }
-            });
-          }
-
-          // Process summary
-          const summary = temp.querySelector('.summary');
-          if (summary) {
-            if (y > 270) {
-              doc.addPage();
-              y = 20;
+                y += 6;
+                break;
+  
+              case "table":
+                // Table handling
+                const rows = Array.from(element.querySelectorAll("tr"));
+                const columns = Array.from(rows[0].querySelectorAll("th, td"));
+                const tableData = rows.map(row =>
+                  Array.from(row.querySelectorAll("td")).map(cell => cell.textContent)
+                );
+  
+                doc.autoTable({
+                  startY: y,
+                  head: [columns.map(c => c.textContent)],
+                  body: tableData,
+                  margin: { left: 15 },
+                  styles: { fontSize: 8, cellPadding: 1.5 },
+                  headerStyles: { fillColor: [240, 240, 240] },
+                  alternateRowStyles: { fillColor: [255, 255, 255] }
+                });
+                y = doc.lastAutoTable.finalY + 8;
+                break;
             }
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(10);
-            const summaryText = summary.textContent.trim();
-            const summaryLines = doc.splitTextToSize(summaryText, 170);
-            summaryLines.forEach(line => {
-              doc.text(line, 20, y);
-              y += 6;
-            });
-          }
-
-          y += 15; // Add space between answers
+          });
         }
-      });
-
+        y += 15; // Space between questions
+      }
+  
+      addFooter();
       doc.save(`${subject.replace(/\s+/g, "_")}_Answers.pdf`);
     } catch (err) {
       setError("Error generating PDF. Please try again.");
@@ -311,6 +365,29 @@ export default function PdfProcessPage() {
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5 mix-blend-overlay" />
             </button>
+          )}
+
+          {progress.length > 0 && (
+            <ErrorBoundary>
+              <div className="w-full max-w-md bg-white/80 backdrop-blur-sm rounded-lg shadow-lg p-4 mt-6 border border-blue-100">
+                <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  Processing Status
+                </h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {progress.map((item) => (
+                    <div 
+                      key={item.id}
+                      className="text-sm text-gray-600 py-1 px-2 rounded bg-white/50 border border-blue-50"
+                    >
+                      {item.message}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </ErrorBoundary>
           )}
 
           {error && (

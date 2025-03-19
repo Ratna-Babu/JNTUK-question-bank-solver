@@ -16,7 +16,9 @@
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "uuid": "^11.0.5",
+    "uuidv4": "^6.2.13"
   },
   "devDependencies": {
     "postcss": "^8",
