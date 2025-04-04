@@ -117,6 +117,24 @@ export default function PdfProcessPage() {
     }
   };
 
+  const addWatermark = (doc) => {
+    const pageCount = doc.getNumberOfPages();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.setFont("helvetica", "italic");
+  
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.text(
+        "https://github.com/Ratna-Babu/JNTUK-question-bank-solver",
+        pageWidth / 2,
+        pageHeight - 10,
+        { align: "center" }
+      );
+    }
+  };
 
   const handleDownloadPDF = async () => {
     setLoading(true);
@@ -262,6 +280,7 @@ export default function PdfProcessPage() {
       }
   
       addFooter();
+      addWatermark(doc); // Add watermark to all pages
       doc.save(`${subject.replace(/\s+/g, "_")}_Answers.pdf`);
     } catch (err) {
       setError("Error generating PDF. Please try again.");
