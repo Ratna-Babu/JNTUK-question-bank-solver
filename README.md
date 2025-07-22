@@ -1,4 +1,4 @@
-# JNTUK Question Bank Solver using AI
+# AI - Powered Question Bank Solver
 
 It is a web application that helps users extract and process JNTUK Question Bank Questions (PDF file) and generate detailed answers PDF of any subject.
 This works with any JNTUK Question Bank of any subject.
